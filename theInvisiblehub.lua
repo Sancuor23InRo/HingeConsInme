@@ -344,5 +344,3 @@ RunService.Heartbeat:Connect(function()
 		humanoid:MoveTo(target.Position)
 	end
 end)
-
-
