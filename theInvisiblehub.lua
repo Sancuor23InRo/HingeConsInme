@@ -352,7 +352,6 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local root = character:WaitForChild("HumanoidRootPart")
-local humanoid = character:WaitForChild("Humanoid")
 
 -- создаём платформу
 local platform = Instance.new("Part")
@@ -363,15 +362,15 @@ platform.Transparency = 0.5
 platform.Name = "FollowPlatform"
 platform.Parent = workspace
 
--- запоминаем высоту (под ногами игрока)
-local offsetY = root.Position.Y - humanoid.HipHeight - (root.Size.Y/2) - 0.5
+-- фиксируем Y при первом создании
+local fixedY = root.Position.Y - 4 -- немного ниже игрока
 
--- обновляем позицию платформы
+-- обновляем позицию (только X и Z)
 RunService.RenderStepped:Connect(function()
 	if root and platform then
 		platform.Position = Vector3.new(
 			root.Position.X,
-			offsetY,
+			fixedY,
 			root.Position.Z
 		)
 	end
@@ -381,11 +380,11 @@ end)
 LocalPlayer.CharacterAdded:Connect(function(char)
 	character = char
 	root = char:WaitForChild("HumanoidRootPart")
-	humanoid = char:WaitForChild("Humanoid")
-	offsetY = root.Position.Y - humanoid.HipHeight - (root.Size.Y/2) - 0.5
+	-- обновляем fixedY под новым персонажем
+	fixedY = root.Position.Y - 4
 end)
 
--- переключение CanCollide по клавише J
+-- переключение CanCollide по J
 UserInputService.InputBegan:Connect(function(input, processed)
 	if not processed and input.KeyCode == Enum.KeyCode.J then
 		if platform then
