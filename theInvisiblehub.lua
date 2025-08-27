@@ -350,50 +350,46 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
-local character, root, humanoid, platform
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local root = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
 
-local canCollideEnabled = true -- стартовое значение CanCollide
+-- создаём платформу
+local platform = Instance.new("Part")
+platform.Size = Vector3.new(6, 1, 6)
+platform.Anchored = true
+platform.CanCollide = true
+platform.Transparency = 0.5
+platform.Name = "FollowPlatform"
+platform.Parent = workspace
 
-local function createPlatform()
-	if platform then
-		platform:Destroy()
-	end
+-- запоминаем высоту (под ногами игрока)
+local offsetY = root.Position.Y - humanoid.HipHeight - (root.Size.Y/2) - 0.5
 
-	platform = Instance.new("Part")
-	platform.Name = "FollowPlatform"
-	platform.Size = Vector3.new(6, 1, 6)
-	platform.Anchored = true
-	platform.CanCollide = canCollideEnabled
-	platform.Massless = true
-	platform.Transparency = 1
-	platform.Parent = workspace
-end
-
-local function setupCharacter(char)
-	character = char
-	root = character:WaitForChild("HumanoidRootPart")
-	humanoid = character:WaitForChild("Humanoid")
-	createPlatform()
-end
-
-setupCharacter(LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait())
-LocalPlayer.CharacterAdded:Connect(setupCharacter)
-
+-- обновляем позицию платформы
 RunService.RenderStepped:Connect(function()
-	if root and humanoid and platform then
-		local footLevel = root.Position.Y - (root.Size.Y / 2) - humanoid.HipHeight
-		platform.Position = Vector3.new(root.Position.X, footLevel - (platform.Size.Y / 2), root.Position.Z)
+	if root and platform then
+		platform.Position = Vector3.new(
+			root.Position.X,
+			offsetY,
+			root.Position.Z
+		)
 	end
 end)
 
--- Переключение CanCollide по клавише I
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
+-- пересоздание при респавне
+LocalPlayer.CharacterAdded:Connect(function(char)
+	character = char
+	root = char:WaitForChild("HumanoidRootPart")
+	humanoid = char:WaitForChild("Humanoid")
+	offsetY = root.Position.Y - humanoid.HipHeight - (root.Size.Y/2) - 0.5
+end)
 
-	if input.KeyCode == Enum.KeyCode.J then
-		canCollideEnabled = not canCollideEnabled
+-- переключение CanCollide по клавише J
+UserInputService.InputBegan:Connect(function(input, processed)
+	if not processed and input.KeyCode == Enum.KeyCode.J then
 		if platform then
-			platform.CanCollide = canCollideEnabled
+			platform.CanCollide = not platform.CanCollide
 		end
 	end
 end)
