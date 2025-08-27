@@ -249,27 +249,30 @@ local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 
-local function getCharacter()
-	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-	char:WaitForChild("HumanoidRootPart")
-	char:WaitForChild("Humanoid")
-	return char
+local character, humanoid, root
+local target
+
+local function setupCharacter(char)
+	character = char
+	humanoid = character:WaitForChild("Humanoid")
+	root = character:WaitForChild("HumanoidRootPart")
+
+	if not target then
+		target = Instance.new("Part")
+		target.Size = Vector3.new(2, 1, 2)
+		target.Anchored = true
+		target.CanCollide = false
+		target.Transparency = 0.5
+		target.Color = Color3.fromRGB(255, 0, 0)
+		target.Name = "TargetPoint"
+		target.Parent = workspace
+	end
+
+	target.Position = root.Position
 end
 
-local character = getCharacter()
-local humanoid = character:WaitForChild("Humanoid")
-local root = character:WaitForChild("HumanoidRootPart")
-
-local target = Instance.new("Part")
-target.Size = Vector3.new(2, 1, 2)
-target.Anchored = true
-target.CanCollide = false
-target.Transparency = 0.5
-target.Color = Color3.fromRGB(255, 0, 0)
-target.Name = "TargetPoint"
-target.Parent = workspace
-
-local Y_HEIGHT = root.Position.Y
+setupCharacter(LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait())
+LocalPlayer.CharacterAdded:Connect(setupCharacter)
 
 local function checkGround(pos)
 	local rayOrigin = pos + Vector3.new(0, 5, 0)
@@ -295,7 +298,7 @@ end)
 
 task.spawn(function()
 	while true do
-		if not enabled then
+		if not enabled or not character or not root then
 			task.wait(1)
 			continue
 		end
@@ -311,9 +314,6 @@ task.spawn(function()
 			local attempts = 0
 			local newPos
 
-			-- ставим парт на текущую позицию игрока
-			target.Position = root.Position
-
 			while not success and attempts < 20 do
 				attempts += 1
 				local angle = math.rad(math.random(-90, 90))
@@ -325,7 +325,7 @@ task.spawn(function()
 				newPos = root.Position + (rotatedLook * distance) + (root.CFrame.RightVector * sideOffset)
 
 				if checkGround(newPos) then
-					target.Position = Vector3.new(newPos.X, Y_HEIGHT, newPos.Z)
+					target.Position = Vector3.new(newPos.X, root.Position.Y, newPos.Z)
 					success = true
 				end
 			end
@@ -340,8 +340,9 @@ task.spawn(function()
 end)
 
 RunService.Heartbeat:Connect(function()
-	if enabled and not paused then
+	if enabled and not paused and humanoid and root then
 		humanoid:MoveTo(target.Position)
 	end
 end)
+
 
