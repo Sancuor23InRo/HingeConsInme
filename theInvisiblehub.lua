@@ -311,6 +311,9 @@ task.spawn(function()
 			local attempts = 0
 			local newPos
 
+			-- ставим парт на текущую позицию игрока
+			target.Position = root.Position
+
 			while not success and attempts < 20 do
 				attempts += 1
 				local angle = math.rad(math.random(-90, 90))
@@ -341,3 +344,4 @@ RunService.Heartbeat:Connect(function()
 		humanoid:MoveTo(target.Position)
 	end
 end)
+
