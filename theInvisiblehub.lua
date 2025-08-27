@@ -344,3 +344,56 @@ RunService.Heartbeat:Connect(function()
 		humanoid:MoveTo(target.Position)
 	end
 end)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local character, root, humanoid, platform
+
+local canCollideEnabled = true -- стартовое значение CanCollide
+
+local function createPlatform()
+	if platform then
+		platform:Destroy()
+	end
+
+	platform = Instance.new("Part")
+	platform.Name = "FollowPlatform"
+	platform.Size = Vector3.new(6, 1, 6)
+	platform.Anchored = true
+	platform.CanCollide = canCollideEnabled
+	platform.Massless = true
+	platform.Transparency = 1
+	platform.Parent = workspace
+end
+
+local function setupCharacter(char)
+	character = char
+	root = character:WaitForChild("HumanoidRootPart")
+	humanoid = character:WaitForChild("Humanoid")
+	createPlatform()
+end
+
+setupCharacter(LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait())
+LocalPlayer.CharacterAdded:Connect(setupCharacter)
+
+RunService.RenderStepped:Connect(function()
+	if root and humanoid and platform then
+		local footLevel = root.Position.Y - (root.Size.Y / 2) - humanoid.HipHeight
+		platform.Position = Vector3.new(root.Position.X, footLevel - (platform.Size.Y / 2), root.Position.Z)
+	end
+end)
+
+-- Переключение CanCollide по клавише I
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+
+	if input.KeyCode == Enum.KeyCode.J then
+		canCollideEnabled = not canCollideEnabled
+		if platform then
+			platform.CanCollide = canCollideEnabled
+		end
+	end
+end)
